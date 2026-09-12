@@ -17,7 +17,7 @@ examples/chapter-01/
 └── gem5-systemc-host/   # 外部 SystemC kernel 承载 libgem5
 ```
 
-第一章使用以下版本作为验证基线：
+第一章使用以下目标依赖版本，实际验证范围见[验证记录](docs/VALIDATION.md)：
 
 - gem5 `v25.1.0.1`
 - Accellera SystemC `2.3.4`
@@ -26,6 +26,8 @@ examples/chapter-01/
 - SCons `4.10.1`
 
 构建步骤见第一章正文和各示例目录中的说明。
+
+目前运行验证基于 macOS arm64 的已有 gem5 构建，不代表已完成官方干净源码或 Linux 的端到端构建验证。
 
 ## 仓库状态
 

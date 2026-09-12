@@ -34,15 +34,18 @@ if [ ! -f "${GEM5_ROOT}/SConstruct" ]; then
     mv "${extracted}" "${GEM5_ROOT}"
 fi
 
+printf 'Existing gem5 trees are reused; verify their version and local patches before claiming a clean build.\n'
+
 PYTHON=$(select_python) || {
     printf 'Install Python 3.12 or 3.13.\n' >&2
     exit 1
 }
-"${PYTHON}" -c 'import sys; assert (3, 9) <= sys.version_info[:2] < (3, 14)'
+"${PYTHON}" -c 'import sys; assert sys.version_info[:2] in ((3, 12), (3, 13)), "Use Python 3.12 or 3.13"'
 
 if [ ! -x "${VENV_ROOT}/bin/python" ]; then
     "${PYTHON}" -m venv "${VENV_ROOT}"
 fi
+"${VENV_ROOT}/bin/python" -c 'import sys; assert sys.version_info[:2] in ((3, 12), (3, 13)), "Existing venv must use Python 3.12 or 3.13"'
 "${VENV_ROOT}/bin/python" -m pip install --upgrade pip "scons==${SCONS_VERSION}"
 
 printf 'gem5 source: %s\n' "${GEM5_ROOT}"

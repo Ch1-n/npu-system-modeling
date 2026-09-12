@@ -12,5 +12,7 @@ ctest --test-dir build/systemc-hello --output-on-failure
 预期最后输出：
 
 ```text
-PASS systemc_hello at 7500 ps
+PASS systemc_hello at 7 ns
 ```
+
+默认第一个上升沿发生于 0 ns，所以第八个在 7 ns。这里计数的是时钟上升沿，不是从 0 时刻起经过的完整周期数。

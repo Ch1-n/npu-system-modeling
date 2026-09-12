@@ -40,7 +40,8 @@ int sc_main(int, char**) {
 
     sc_core::sc_start();
 
-    if (observer.cycles() != 8) {
+    if (observer.cycles() != 8
+        || sc_core::sc_time_stamp() != sc_core::sc_time(7, sc_core::SC_NS)) {
         std::cerr << "unexpected cycle count: " << observer.cycles() << '\n';
         return 1;
     }

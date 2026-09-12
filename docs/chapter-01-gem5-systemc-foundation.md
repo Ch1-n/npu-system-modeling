@@ -4,7 +4,7 @@
 
 实现一个算子模型并不难，真正困难的是回答下面这些系统问题：谁执行驱动程序，谁负责推进时间，CPU 与 NPU 如何交换命令和数据，访存延迟从哪里产生，仿真结束时还有没有请求留在队列里。
 
-如果只用 C++ 写一个矩阵乘函数，我们只能验证计算公式。如果只在 SystemC 中搭一个 NPU，又很难观察真实 CPU 指令、软件调度和存储系统对它的影响。本文先搭建整个系列的底座：让 gem5 中的 RISC-V CPU 和 SystemC 中的硬件模型运行在同一个进程、同一条仿真时间轴上。
+一个不含时序的 C++ 矩阵乘函数主要用于验证计算结果；仅有独立 NPU 模型时，也缺少执行 Guest 软件的 CPU 和配套存储系统。SystemC 本身可以描述这些模块，但本文选择复用 gem5 的 CPU 与存储模型。我们先搭建整个系列的底座：让 gem5 中的 RISC-V CPU 和 SystemC 中的硬件模型运行在同一个进程、同一条仿真时间轴上。
 
 本章暂时不加入具体 NPU Engine。完成本章后，我们将得到一个可以继续扩展命令 Bridge、Shared Memory、DMA 和 Runtime 的最小联合仿真环境。
 
@@ -18,13 +18,13 @@ NPU 模型通常会经历功能模型、周期模型和 RTL 三个阶段。它�
 
 功能模型关心结果是否正确。例如输入两个 FP16 矩阵，输出是否与 NumPy 或 ONNX Runtime 的参考结果一致。它适合快速验证算法、数据类型和算子组合，但通常不会告诉我们命令排队了多久，也不会告诉我们 Shared Memory 是否发生 bank conflict。
 
-周期模型关心数据在什么时候可用。它需要描述 FIFO 深度、模块吞吐率、流水延迟、端口冲突、反压和完成事件。周期模型的精度低于 RTL，但编译速度和运行速度通常更适合早期架构探索。
+周期模型关心数据在什么时候可用。它需要描述 FIFO 深度、模块吞吐率、流水延迟、端口冲突、反压和完成事件。它通常省略电路实现细节，运行速度也更适合早期架构探索；但时序精度取决于具体模型和校准情况，不能仅凭使用 C++、SystemC 或 RTL 来判定。RTL 仿真本身也不等于包含布局布线延迟的门级时序仿真。
 
 RTL 进一步描述寄存器、组合逻辑和逐周期握手，是综合、时序分析和芯片实现的基础。不过，在架构尚未稳定时直接使用 RTL 扫描大量参数，开发成本会很高。
 
-gem5 与 SystemC 的组合位于周期模型这一层：
+本系列用 gem5 与 SystemC 构建周期级系统模型。两者接在一起不会自动获得周期精确性，仍需逐项定义和验证时序契约：
 
-- gem5 负责执行真实 RISC-V Guest ELF，并提供 CPU、cache、地址转换和内存系统模型。
+- gem5 负责执行 RISC-V Guest ELF，并提供可选的 CPU、cache 和内存系统模型。本章没有配置 cache；SE 使用模拟进程的地址映射，不是完整操作系统的页表遍历路径。
 - SystemC 负责表达 NPU 内部模块、FIFO、端口、延迟、反压和多 Engine 并行。
 - 软件参考模型继续用于数值对比。
 - RTL 在接口和微架构冻结后承担更精确的实现验证。
@@ -65,7 +65,7 @@ gem5_within_systemc adapter
 
 因此，在这一方案中构建 `libgem5` 时使用 `USE_SYSTEMC=n` 是合理的。SystemC 由 Host 工程单独链接，adapter 负责把 gem5 的事件队列映射到外部 SystemC 时间轴。`USE_SYSTEMC=y` 对应另一种 gem5 构建方式，不能与本文方案混为一谈。
 
-单进程方式的优势是所有模块共享同一个仿真时间和对象生命周期。代价是构建链更复杂，而且 gem5、SystemC、编译器和 C++ ABI 必须兼容。
+单进程方式便于统一时间协调和退出管理，但不会自动统一两个框架的生命周期。本文使用的上游 adapter 只支持单个 gem5 主事件队列、协作式 SystemC 进程，并要求仿真中至多创建一个 `Gem5SystemC::Module`。它不是并行运行多个 gem5 kernel 的通用接口。构建时，gem5、SystemC、编译器和 C++ ABI 也必须兼容。
 
 ## 四 两套调度器如何共享一条时间轴
 
@@ -80,22 +80,30 @@ SystemC 和 gem5 都有自己的事件调度机制：
 
 图 3 SystemC 与 gem5 的时间协调
 
-核心逻辑可以概括为：
+上游的 `eventLoop()` 是 `SC_METHOD`，不能在其中调用 `wait()`。它安排定时事件后返回，把控制权交还给 SystemC kernel；`simulate()` 则由 Host 的 `SC_THREAD` 调用，等待退出通知。下面是事件处理方法的示意伪代码，不是可直接编译的替代实现：
 
 ```cpp
 while (!gem5_event_queue.empty()) {
-    auto next_tick = gem5_event_queue.nextTick();
-
-    if (next_tick > systemc_now) {
-        wakeup.notify(next_tick - systemc_now);
-        wait(wakeup);
+    catchup();  // Align gem5's current tick with SystemC time.
+    auto next = gem5_event_queue.nextTick();
+    auto now = sc_time_stamp().value();
+    if (next > now) {
+        wakeup.notify(sc_time::from_value(next - now));
+        return;  // SC_METHOD must not call wait().
     }
-
-    gem5_event_queue.serviceOne();
+    if (next < now) {
+        fatal("event scheduled in the past");
+    }
+    if (gem5_event_queue.serviceOne()) {
+        exit_notification.notify(SC_ZERO_TIME);
+        return;
+    }
 }
 ```
 
-真实实现还要处理停止事件、跨边界回调和当前 tick 对齐，但原则就是“谁的下一事件更早，先推进到谁”。
+上游还使用 `externalSchedulingEvent` 处理提前唤醒：SystemC 一侧插入更早的 gem5 事件后，必须通知 adapter 重新检查队列，不能继续等原来的截止时间。同一时间戳内还涉及 gem5 事件优先级和 SystemC delta cycle，不能把它简化为任意排列的同时执行。
+
+共享时间轴也不意味着任意时刻的 `gem5::curTick()` 都与 `sc_time_stamp()` 相等。当 SystemC 在两个 gem5 事件之间运行时，gem5 的当前 tick 可以暂时落后；adapter 在处理事件时通过 `catchup()` 对齐。后续 Bridge 从 SystemC 调回 gem5、安排新事件前，也需要遵循这一时间对齐与通知约定。
 
 为了简化换算，本系列把 gem5 tick frequency 设置为 `10^12 tick/s`，并将 SystemC 时间分辨率设为 `1 ps`。这样：
 
@@ -123,7 +131,7 @@ while (!gem5_event_queue.empty()) {
 
 ### 2 实例化 gem5 SimObject
 
-`CxxConfigManager` 根据 `config.ini` 查找并实例化 CPU、总线、内存控制器、workload 和进程对象。后续加入外部端口时，需要在 `instantiate()` 之前完成端口绑定，否则 SimObject 初始化阶段可能报告端口未连接。
+示例先用 `findAllObjects()` 创建模型对象，再逐个调用 `bindObjectPorts()`，最后调用 `instantiate(false)` 完成 `init()`、统计和 probe 注册。`false` 表示对象和端口已经准备好。默认的 `instantiate()` 会自行完成对象创建与端口绑定；后续若手动连接外部端口，则必须在 SimObject 的 `init()` 前完成，避免未连接错误或重复绑定。
 
 ### 3 装载 Guest ELF
 
@@ -131,17 +139,19 @@ SystemC elaboration 结束后，Host 调用 `initState()` 和 `startup()`。gem5
 
 ### 4 推进两个事件系统
 
-`sc_start()` 启动 SystemC kernel。`Gem5Host` 内部线程调用 `simulate()`，adapter 按上一节的方法协调 gem5 EventQueue 与 SystemC 时间。
+调用 `sc_start()` 后，SystemC 先执行包括 `end_of_elaboration()` 在内的启动回调，再进入进程调度。`Gem5Host` 内部线程调用有 tick 上限的 `simulate()`，adapter 按上一节的方法协调 gem5 EventQueue 与 SystemC 时间。
 
 ### 5 处理退出和 drain
 
-Guest 执行退出系统调用后，gem5 产生 `GlobalSimLoopExitEvent`。第一章没有外部请求，可以直接调用 `sc_stop()`。等我们加入 DMA 和异步 Engine 后，Guest 退出并不一定代表所有数据已经写回，届时必须先禁止新的通知、等待在途请求 drain，再停止 SystemC。
+Guest 执行退出系统调用后，gem5 产生 `GlobalSimLoopExitEvent`。第一章没有外部 NPU 请求，因此检查退出原因、退出码和退出时的时间对齐后就调用 `sc_stop()`，并未执行完整系统 drain。超时事件也可能带有退出码 0，不能只用退出码判断成功。
+
+加入 DMA 和异步 Engine 后，应先停止接受新工作，保留在途请求所需的完成回调并继续推进事件，待请求排空后再停止仿真。不能先屏蔽全部通知，否则 drain 可能永远无法结束。应用级请求排空与 gem5 `DrainManager` 的协议也需要分别处理。
 
 这也是周期模型中一个经常被忽略的问题：程序结束只是软件事件，硬件队列可能仍有工作。
 
 ## 六 准备构建环境
 
-本文使用以下版本作为已验证基线：
+本文选用以下目标依赖版本。当前运行验证来自 macOS arm64 上已有的 gem5 构建和 SystemC 2.3.4；尚未完成官方干净源码在 Linux/macOS 上的全量构建验证，因此下表不是已通过测试的跨平台兼容矩阵：
 
 | 组件 | 版本或要求 | 用途 |
 |---|---|---|
@@ -152,7 +162,9 @@ Guest 执行退出系统调用后，gem5 产生 `GlobalSimLoopExitEvent`。第�
 | CMake | 3.20 以上 | 构建示例 Host 和 SystemC 模型 |
 | C++ 编译器 | Apple clang 或 GCC | Host 模型编译 |
 
-仓库没有复制 gem5 或 SystemC 源码。脚本会下载固定版本的 gem5；SystemC 建议通过系统包管理器安装，或者自行编译后设置 `SYSTEMC_HOME`。
+仓库没有复制 gem5 或 SystemC 源码。脚本会下载固定版本的 gem5；SystemC 建议安装 2.3.4，或者自行编译后设置 `SYSTEMC_HOME`。包管理器当前默认版本可能已更新，不能假定直接安装就一定得到 2.3.4。
+
+脚本不是系统依赖的一键安装器。开始前需要 C/C++ 工具链、CMake、curl、tar、Python 的 venv 与开发文件，以及 zlib 开发文件；其他可选组件按 gem5 构建输出处理。Linux 软件包名称和编译器要求请对照文末 gem5 构建文档。Host 当前使用 C++17，SystemC 库的 C++ 标准与 ABI 必须匹配。测试范围与剩余验证项记录在仓库 `docs/VALIDATION.md`。
 
 ```bash
 export SYSTEMC_HOME=/path/to/systemc
@@ -175,7 +187,7 @@ cmake --build build/systemc-hello -j4
 ./build/systemc-hello/systemc_hello
 ```
 
-它会创建一个周期为 1 ns 的时钟，并在若干个上升沿后停止。这个例子很小，但能够优先排除 SystemC 安装、C++ ABI 和动态库路径问题。
+它会创建一个周期为 1 ns 的时钟，在第 8 个上升沿停止。默认 `sc_clock` 在 0 ns 产生第一个上升沿，所以预期停止于 7 ns。`dont_initialize()` 只禁止进程初始化执行，不会屏蔽 0 时刻的真实时钟事件。示例同时检查边沿数和停止时间。
 
 ## 七 分开构建 gem5.opt 与 libgem5
 
@@ -255,8 +267,10 @@ cmake --build build/gem5-systemc-host -j4
 - Guest 确实由模拟 RISC-V CPU 取指执行。
 - gem5 对象由 C++ `config.ini` 实例化。
 - gem5 EventQueue 由外部 SystemC kernel 推进。
-- gem5 tick 与 SystemC 时间保持一致。
+- 退出事件处的 gem5 tick 与 SystemC 时间一致，SystemC 时钟边沿持续推进。
 - Guest 退出能够正常终止整个联合仿真进程。
+
+示例默认最多执行 `10^9` tick，即 1 ms 模拟时间；可通过第二个参数覆盖。模拟时间上限不等于墙钟超时，CI 仍应设置进程超时。输出中的 `npu_clock_edges` 包含 0 时刻上升沿，不是已完成计算周期或 NPU 利用率。最终时间相等只检查一个同步点，不能替代后续双向 Bridge、提前唤醒和反压测试。
 
 ## 十 仓库为什么这样组织
 
@@ -312,7 +326,7 @@ SE 模式承载的是用户态进程语义。它足以研究 CPU 指令、NPU �
 
 本章建立了后续所有功能的共同底座：RISC-V Guest 由 gem5 执行，SystemC 负责外层离散事件调度，`libgem5` adapter 把 gem5 EventQueue 映射到同一条时间轴。
 
-当前最小系统尚未包含 NPU 命令、DMA、Shared Memory 或计算 Engine，因此不能用于评估 NPU 性能。它证明的是联合仿真生命周期和时间协调能够工作。
+当前最小系统尚未包含 NPU 命令、DMA、Shared Memory 或计算 Engine，因此不能用于评估 NPU 性能。它验证的是当前 Hello World 路径下的启动、退出和退出时的时间对齐，不足以证明任意跨框架交互的时序正确性。
 
 下一章将在这个 Host 中加入教学命令 Bridge。我们会让 RISC-V CPU 发出第一条自定义 NPU 指令，并仔细区分四个经常被混用的时刻：命令被接受、Engine 执行完成、软件消费结果，以及 CPU 指令最终退休。
 
@@ -320,6 +334,9 @@ SE 模式承载的是用户态进程语义。它足以研究 CPU 指令、NPU �
 
 1. gem5 官方仓库：[https://github.com/gem5/gem5](https://github.com/gem5/gem5)
 2. gem5 `v25.1.0.1`：[https://github.com/gem5/gem5/releases/tag/v25.1.0.1](https://github.com/gem5/gem5/releases/tag/v25.1.0.1)
-3. gem5 within SystemC 示例：`util/systemc/gem5_within_systemc`
+3. gem5 within SystemC adapter 源码：[sc_module.cc](https://github.com/gem5/gem5/blob/v25.1.0.1/util/systemc/gem5_within_systemc/sc_module.cc)
 4. Accellera SystemC：[https://www.accellera.org/downloads/standards/systemc](https://www.accellera.org/downloads/standards/systemc)
 5. SystemC 2.3.4 Release：[https://github.com/accellera-official/systemc/releases/tag/2.3.4](https://github.com/accellera-official/systemc/releases/tag/2.3.4)
+6. gem5 构建依赖：[Building gem5](https://www.gem5.org/documentation/general_docs/building)
+7. gem5 C++ 生命周期：[cxx_manager.cc](https://github.com/gem5/gem5/blob/v25.1.0.1/src/sim/cxx_manager.cc)
+8. 本文配套代码、提纲与验证记录：[https://github.com/Ch1-n/npu-system-modeling](https://github.com/Ch1-n/npu-system-modeling)

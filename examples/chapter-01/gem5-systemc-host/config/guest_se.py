@@ -17,7 +17,10 @@ from m5.objects import VoltageDomain
 parser = argparse.ArgumentParser()
 parser.add_argument("--binary", required=True)
 parser.add_argument("--generate-only", action="store_true")
+parser.add_argument("--max-ticks", type=int, default=1_000_000_000)
 args = parser.parse_args()
+if args.max_ticks <= 0:
+    parser.error("--max-ticks must be positive")
 
 system = System()
 system.clk_domain = SrcClockDomain(
@@ -48,5 +51,8 @@ root = Root(full_system=False, system=system)
 m5.instantiate()
 
 if not args.generate_only:
-    exit_event = m5.simulate()
+    exit_event = m5.simulate(args.max_ticks)
     print(f"Exiting @ tick {m5.curTick()} because {exit_event.getCause()}")
+    if (exit_event.getCode() != 0
+            or exit_event.getCause() != "exiting with last active thread context"):
+        raise SystemExit("Guest did not exit normally within the tick limit")

@@ -1,5 +1,6 @@
 #include <systemc>
 
+#include <charconv>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -25,8 +26,9 @@ class Gem5Host final : public Gem5SystemC::Module {
 public:
     SC_HAS_PROCESS(Gem5Host);
 
-    Gem5Host(sc_core::sc_module_name name, const std::string& config_path)
-        : Gem5SystemC::Module(name) {
+    Gem5Host(sc_core::sc_module_name name, const std::string& config_path,
+             gem5::Tick max_ticks)
+        : Gem5SystemC::Module(name), max_ticks_(max_ticks) {
         SC_THREAD(run);
 
         gem5::trace::setDebugLogger(&logger_);
@@ -76,20 +78,28 @@ public:
         }
     }
 
-    int exit_code() const { return exit_code_; }
+    bool passed() const { return passed_; }
 
 private:
     Gem5SystemC::Logger logger_;
     std::unique_ptr<gem5::CxxIniFile> config_file_;
     std::unique_ptr<gem5::CxxConfigManager> config_manager_;
     int exit_code_ = -1;
+    gem5::Tick max_ticks_;
+    bool passed_ = false;
 
     void run() {
-        const gem5::GlobalSimLoopExitEvent* event = simulate();
+        const gem5::GlobalSimLoopExitEvent* event = simulate(max_ticks_);
         exit_code_ = event->getCode();
         std::cout << "gem5 exit: tick=" << gem5::curTick()
                   << " cause=\"" << event->getCause() << "\""
                   << " code=" << exit_code_ << '\n';
+        passed_ = exit_code_ == 0
+            && event->getCause() == "exiting with last active thread context"
+            && gem5::curTick() == sc_core::sc_time_stamp().value();
+        if (!passed_) {
+            std::cerr << "FAIL: expected normal Guest exit and aligned time\n";
+        }
         sc_core::sc_stop();
     }
 };
@@ -107,20 +117,31 @@ public:
         dont_initialize();
     }
 
-    std::uint64_t cycles() const { return cycles_; }
+    std::uint64_t edges() const { return edges_; }
 
 private:
-    std::uint64_t cycles_ = 0;
+    std::uint64_t edges_ = 0;
 
-    void on_tick() { ++cycles_; }
+    void on_tick() { ++edges_; }
 };
 
 } // namespace
 
 int sc_main(int argc, char** argv) {
-    if (argc != 2) {
-        std::cerr << "usage: " << argv[0] << " <config.ini>\n";
+    if (argc != 2 && argc != 3) {
+        std::cerr << "usage: " << argv[0] << " <config.ini> [max_ticks]\n";
         return EXIT_FAILURE;
+    }
+    gem5::Tick max_ticks = 1000000000;
+    if (argc == 3) {
+        const std::string text = argv[2];
+        const auto result = std::from_chars(
+            text.data(), text.data() + text.size(), max_ticks);
+        if (result.ec != std::errc{} || result.ptr != text.data() + text.size()
+            || max_ticks == 0) {
+            std::cerr << "max_ticks must be a positive integer\n";
+            return EXIT_FAILURE;
+        }
     }
 
     sc_core::sc_set_time_resolution(1, sc_core::SC_PS);
@@ -128,12 +149,14 @@ int sc_main(int argc, char** argv) {
         "npu_clock", sc_core::sc_time(1250, sc_core::SC_PS)};
     Heartbeat heartbeat{"heartbeat"};
     heartbeat.clk(npu_clock);
-    Gem5Host gem5{"gem5", argv[1]};
+    Gem5Host gem5{"gem5", argv[1], max_ticks};
 
     sc_core::sc_start();
     CxxConfig::statsDump();
 
     std::cout << "SystemC stop: time=" << sc_core::sc_time_stamp()
-              << " npu_cycles=" << heartbeat.cycles() << '\n';
-    return gem5.exit_code() == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+              << " npu_clock_edges=" << heartbeat.edges() << '\n';
+    const bool passed = gem5.passed() && heartbeat.edges() > 0;
+    std::cout << (passed ? "PASS" : "FAIL") << " gem5_systemc_host\n";
+    return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 }
