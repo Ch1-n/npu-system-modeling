@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="30.3.6">
+  <diagram name="建模层级">
+    <mxGraphModel dx="1200" dy="700" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1169" pageHeight="827">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="2" value="NPU 建模层级与问题边界" style="text;html=1;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1f2937;" vertex="1" parent="1"><mxGeometry x="300" y="30" width="570" height="40" as="geometry"/></mxCell>
+        <mxCell id="3" value="功能模型&#xa;&#xa;回答：算得对不对&#xa;&#xa;关注：算法、精度、算子组合&#xa;输出：Golden Result" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=16;spacing=12;" vertex="1" parent="1"><mxGeometry x="70" y="150" width="260" height="210" as="geometry"/></mxCell>
+        <mxCell id="4" value="周期模型&#xa;&#xa;回答：什么时候完成&#xa;&#xa;关注：延迟、吞吐、FIFO、反压&#xa;输出：Cycle Profile" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;spacing=12;" vertex="1" parent="1"><mxGeometry x="450" y="150" width="260" height="210" as="geometry"/></mxCell>
+        <mxCell id="5" value="RTL 实现&#xa;&#xa;回答：电路如何实现&#xa;&#xa;关注：寄存器、组合逻辑、时序&#xa;输出：可综合设计" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=16;spacing=12;" vertex="1" parent="1"><mxGeometry x="830" y="150" width="260" height="210" as="geometry"/></mxCell>
+        <mxCell id="6" value="架构逐步冻结" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;fontSize=13;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="3" target="4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="7" value="接口与微架构下沉" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;fontSize=13;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="4" target="5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="8" value="本系列的重点" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1"><mxGeometry x="450" y="420" width="260" height="45" as="geometry"/></mxCell>
+        <mxCell id="9" value="软件 Golden Model&#xa;验证数值" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=15;" vertex="1" parent="1"><mxGeometry x="170" y="520" width="220" height="80" as="geometry"/></mxCell>
+        <mxCell id="10" value="gem5 + SystemC&#xa;构建周期级系统" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="470" y="520" width="220" height="80" as="geometry"/></mxCell>
+        <mxCell id="11" value="RTL 接口约束&#xa;承接后续实现" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=15;" vertex="1" parent="1"><mxGeometry x="770" y="520" width="220" height="80" as="geometry"/></mxCell>
+        <mxCell id="12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="8" target="10"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="13" value="数值对比" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="9" target="10"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="14" value="设计约束" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="10" target="11"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

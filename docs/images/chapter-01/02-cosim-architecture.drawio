@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="30.3.6">
+  <diagram name="联合仿真架构">
+    <mxGraphModel dx="1300" dy="760" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1169" pageHeight="827">
+      <root>
+        <mxCell id="0"/><mxCell id="1" parent="0"/>
+        <mxCell id="2" value="gem5 与 SystemC 单进程联合仿真" style="text;html=1;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1f2937;" vertex="1" parent="1"><mxGeometry x="300" y="20" width="570" height="40" as="geometry"/></mxCell>
+        <mxCell id="3" value="Host C++ Process" style="swimlane;startSize=36;container=1;pointerEvents=0;rounded=0;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=16;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="80" y="90" width="1010" height="510" as="geometry"/></mxCell>
+        <mxCell id="4" value="gem5 域" style="swimlane;startSize=32;container=1;pointerEvents=0;rounded=0;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;fontStyle=1;" vertex="1" parent="3"><mxGeometry x="40" y="60" width="430" height="390" as="geometry"/></mxCell>
+        <mxCell id="5" value="SystemC 域" style="swimlane;startSize=32;container=1;pointerEvents=0;rounded=0;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=15;fontStyle=1;" vertex="1" parent="3"><mxGeometry x="540" y="60" width="430" height="390" as="geometry"/></mxCell>
+        <mxCell id="6" value="RISC-V Guest ELF&#xa;Runtime / Test Program" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=15;" vertex="1" parent="4"><mxGeometry x="105" y="55" width="220" height="70" as="geometry"/></mxCell>
+        <mxCell id="7" value="RISC-V MinorCPU&#xa;取指 译码 执行" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=15;" vertex="1" parent="4"><mxGeometry x="105" y="165" width="220" height="70" as="geometry"/></mxCell>
+        <mxCell id="8" value="Cache / Bus / Memory&#xa;gem5 EventQueue" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=15;" vertex="1" parent="4"><mxGeometry x="105" y="275" width="220" height="70" as="geometry"/></mxCell>
+        <mxCell id="9" value="SystemC NPU Top" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=15;fontStyle=1;" vertex="1" parent="5"><mxGeometry x="105" y="55" width="220" height="60" as="geometry"/></mxCell>
+        <mxCell id="10" value="后续章节逐步加入&#xa;Bridge  CMD  SMEM  DMA&#xa;Compute  SYNC  Runtime" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;spacing=8;" vertex="1" parent="5"><mxGeometry x="105" y="155" width="220" height="100" as="geometry"/></mxCell>
+        <mxCell id="11" value="SystemC Kernel&#xa;sc_event / sc_time" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=15;" vertex="1" parent="5"><mxGeometry x="105" y="295" width="220" height="60" as="geometry"/></mxCell>
+        <mxCell id="12" value="加载并执行" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="4" source="6" target="7"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="13" value="访存与事件" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="4" source="7" target="8"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="14" value="模型组成" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="5" source="9" target="10"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="15" value="离散事件调度" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="5" source="10" target="11"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="16" value="gem5_within_systemc adapter&#xa;时间协调与边界回调" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=15;fontStyle=1;" vertex="1" parent="3"><mxGeometry x="430" y="205" width="150" height="90" as="geometry"/></mxCell>
+        <mxCell id="17" value="EventQueue" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;entryX=0;entryY=0.35;" edge="1" parent="3" source="8" target="16"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="18" value="sc_event" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.65;entryX=0;entryY=0.5;" edge="1" parent="3" source="16" target="11"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="19" value="sc_main&#xa;构造对象 读取 config.ini  启动 sc_start  处理退出" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" vertex="1" parent="3"><mxGeometry x="270" y="455" width="470" height="55" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

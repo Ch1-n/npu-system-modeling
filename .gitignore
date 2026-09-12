@@ -1,0 +1,9 @@
+/build/
+/third_party/
+/.venv/
+*.log
+*.ini
+stats*.txt
+__pycache__/
+*.pyc
+.DS_Store
