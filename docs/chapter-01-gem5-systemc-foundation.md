@@ -2,6 +2,8 @@
 
 > NPU 系统建模与联合仿真系列第一篇
 
+## 1. 前言
+
 最近搞了个 NPU 的 SystemC 模型，准备出个系列文章，把环境搭建、IP 选型、各个 NPU Engine 的 SystemC 建模、Profiling 和模型测试的过程再梳理一遍，希望能帮助对这块感兴趣的新人。不过先叠个甲，这套环境主要服务于个人的架构探索和模型验证，没有覆盖完整的工业级验证流程。这个系列就按我实际做的过程来写，也欢迎大家指出问题。
 
 RISC-V 控制核搭配专用计算单元，是 AI 芯片中值得关注的一类架构思路。谈到实际产品，可以看看 Jim Keller 所在的 Tenstorrent 及其 Tensix 计算核心，以及国内理想的马赫 M100。这里借这些案例引出控制与专用计算相结合的思路，不表示它们采用相同的 RVV、自定义指令接口或微架构。我们这套模型采用带 RVV 扩展的 RISC-V 控制核，通过自定义指令接口与自研 Engine 交互，既让 CPU 执行控制程序和一部分通用计算，也方便逐步接入专用计算模块。
@@ -16,9 +18,11 @@ RISC-V 控制核搭配专用计算单元，是 AI 芯片中值得关注的一类
 
 工具链：采用玄铁开源的 Xuantie GNU Toolchain，把 CPU 侧程序编译成 RISC-V ELF。
 
-上面介绍的是完整项目的组成，公开示例会逐篇加入这些模块。第一篇先不接 NPU，只让 RISC-V CPU 跑一段 Hello World，同时让 SystemC 时钟正常运行。这里暂时使用基础的 DDR3 内存配置，不接 RVV 工作负载、自定义指令和 HBM。后续扩展都从这个框架往上加。配套代码在 [npu-system-modeling](https://github.com/Ch1-n/npu-system-modeling)。只想先跑起来的读者，可以直接跳到第五节；想了解两个仿真器怎样配合，再顺着往下看。
+上面介绍的是完整项目的组成，公开示例会逐篇加入这些模块。第一篇先不接 NPU，只让 RISC-V CPU 跑一段 Hello World，同时让 SystemC 时钟正常运行。这里暂时使用基础的 DDR3 内存配置，不接 RVV 工作负载、自定义指令和 HBM。后续扩展都从这个框架往上加。配套代码在 [npu-system-modeling](https://github.com/Ch1-n/npu-system-modeling)。只想先跑起来的读者，可以直接跳到第三节；想了解两个仿真器怎样配合，再顺着往下看。
 
-## 一 gem5 和 SystemC 联仿
+## 2. 基本介绍
+
+### 2.1 gem5 和 SystemC 联仿
 
 我没有找到同时满足 RVV、自定义指令接口和开源要求的现成 SystemC CPU 模型，因此选择复用 gem5 的 RISC-V CPU，再接入自己的 SystemC 模块。如果项目能拿到 CPU 厂商提供的合适模型，可以优先评估。也可以用 Verilator 将 CPU RTL 编译成带 SystemC 接口的仿真模型，不过它仍然保留 RTL 层面的实现细节，不会自动变成快速的高层模型，仿真速度和集成工作量要另外考虑。就同一进程内的结合方式而言，可以把 SystemC 接入 gem5，也可以由外部 SystemC 承载 gem5。我们主要在 SystemC 侧开发 NPU 模型，这里选择后者。
 
@@ -32,7 +36,7 @@ RISC-V 控制核搭配专用计算单元，是 AI 芯片中值得关注的一类
 
 SystemC 是硬件建模中常用的 C++ 类库和仿真内核，提供时钟、FIFO、事件和并发进程等机制。单个 Engine 可以由 testbench 构造请求来测试，整个 NPU 子系统也可以采用类似的方式。不过，为了把软件执行和命令提交的开销一起纳入仿真，这里让 CPU 执行程序来提交请求，复用 gem5 的 RISC-V CPU 和存储系统模型。
 
-## 二 Host 和 Guest
+### 2.2 Host 和 Guest
 
 下面这张图是整个系列的结构。黄色框里的 NPU 模块会在后续文章中逐步加入，第一篇暂时只有时钟和一个计数模块。
 
@@ -50,7 +54,7 @@ SystemC 是硬件建模中常用的 C++ 类库和仿真内核，提供时钟、F
 
 这里采用 gem5 的 SE 模式，即 syscall emulation。它能运行用户态 RISC-V 程序，把支持的系统调用交给模拟器处理，不需要先启动 Linux 内核。对于当前的实验，这样比较轻便；如果以后要研究内核驱动、中断或操作系统调度，就需要另外搭 full-system 环境。本篇也没有配置 CPU cache，先让 CPU 端口直接连接总线和内存控制器。
 
-### 联仿策略
+### 2.3 联仿策略
 
 gem5 和 SystemC 也可以分别运行，通过 socket 或共享内存通信。不过这样还要约定两边各自能往前跑多远、消息对应哪个模拟时刻，以及什么时候停下来等对方。
 
@@ -68,7 +72,7 @@ gem5_within_systemc adapter
 
 这份上游 adapter 支持单个 gem5 主事件队列，整个仿真里只创建一个 `Gem5SystemC::Module`。第一篇就按这个结构来，不涉及多个 gem5 实例或并行事件队列。
 
-## 三 共享时间轴
+### 2.4 共享时间轴
 
 把库链接到一起之后，还有一个问题：gem5 和 SystemC 都有自己的事件调度器，究竟听谁的？
 
@@ -107,7 +111,7 @@ while (!gem5_event_queue.empty()) {
 
 代码里的 `catchup()` 也值得留意。在两个 gem5 事件之间，SystemC 可能已经往前走了，`gem5::curTick()` 还停留在上次处理事件的时刻。`catchup()` 把它对齐到当前 SystemC 时间。所以“共用一条时间轴”并不意味着随时读取两个时间戳，它们都恰好相等。以后从 SystemC 回调 gem5 时，也要先处理好这个对齐关系。
 
-### 统一时间单位
+### 2.5 统一时间单位
 
 这份 adapter 假定一个 gem5 tick 表示 1 ps。因为 1 秒等于 10^12 ps，Host 将 gem5 的时间基准设为 10^12 tick/s，同时将 SystemC 的时间分辨率设为 1 ps。这里的分辨率是模拟时间的最小刻度，不是固定的仿真步长；没有事件时，仿真时间可以直接推进到下一个事件。两边的时间单位对应如下：
 
@@ -119,7 +123,7 @@ while (!gem5_event_queue.empty()) {
 
 Host 在启动时会检查 SystemC 分辨率。如果它不是 1 ps，就停止运行，避免带着错误的时间单位继续仿真。同一个时间戳内部仍有 gem5 事件优先级和 SystemC delta cycle 的先后关系，这部分留到接入双向请求时再展开。
 
-## 四 程序的启动和退出
+### 2.6 程序的启动和退出
 
 接下来看代码入口。把下面这条调用顺序理清，后面遇到“对象没初始化”或“端口没接上”时，会比较容易定位。
 
@@ -139,7 +143,7 @@ Guest 退出时，gem5 返回一个 `GlobalSimLoopExitEvent`。Host 检查退出
 
 本篇还没有 NPU 请求，可以这样直接停止。后面加上 DMA 后，就要考虑另一种情况：Guest 已经退出，但最后一笔数据还没写回。这时需要先停止提交新工作，继续处理在途请求，等它们排空后再退出，也就是 drain。完成回调在此期间仍要保留，否则请求等不到响应，反而退不出去。具体实现放到后面接 DMA 时再讲。
 
-## 五 实例仿真
+## 3. 实例仿真
 
 先下载仓库，后面的命令都在仓库根目录执行：
 
@@ -161,7 +165,7 @@ cd npu-system-modeling
 
 构建前还需要准备 Python 开发文件、venv、zlib 开发文件，以及 curl、tar 等工具。仓库脚本负责下载 gem5 和准备 SCons，不代替系统包管理器。Linux 的依赖安装可参考文末 gem5 官方构建文档。
 
-### 跑通 SystemC demo
+### 3.1 跑通 SystemC demo
 
 依赖安装和编译可以借助 AI 工具，不过仍建议按下面的顺序逐步测试，出错时比较容易定位。
 
@@ -198,7 +202,7 @@ PASS systemc_hello at 7 ns
 
 这一步先通过，再去编译 gem5。否则后面一旦遇到链接错误，很难马上判断是 SystemC 安装问题，还是 gem5 的问题。
 
-### 分别构建 gem5.opt 和 libgem5
+### 3.2 分别构建 gem5.opt 和 libgem5
 
 这里需要两种 gem5 产物。`gem5.opt` 能运行 Python 配置脚本，用来先测试 Guest、生成配置；`libgem5_opt` 则由 C++ Host 链接。后者采用以下选项，启用 C++ 配置接口并去掉 Python 嵌入依赖：
 
@@ -225,7 +229,7 @@ third_party/gem5/build/RISCV_LIB
 
 首次编译会比较久。之后只修改本文的 Host 或 SystemC 模型时，通常不用再编译整个 gem5。
 
-### 生成 config.ini
+### 3.3 生成 config.ini
 
 平时直接用 gem5 时，可以在 Python 里创建 CPU、总线和内存控制器。我们的 Host 没有嵌入 Python，因此先用 `gem5.opt` 把这些对象及连接关系导出成 `config.ini`，再交给 C++ 配置管理器读取。
 
@@ -248,7 +252,7 @@ RiscvMinorCPU
 
 `config.ini` 里含有 Guest ELF 的绝对路径。换电脑或移动仓库后要重新生成，这个文件不提交到 Git。
 
-### 构建并运行 Host
+### 3.4 构建并运行 Host
 
 准备好配置后，编译联合仿真程序：
 
@@ -266,7 +270,7 @@ cmake --build build/gem5-systemc-host -j4
 
 macOS 下可能遇到一种情况：编译链接成功，启动却报找不到 `build/RISCV_LIB/libgem5_opt.dylib`。原因是某些 gem5 构建把相对路径写进了动态库 install name。示例 CMake 已在链接后调用 `install_name_tool -change` 修正这个依赖路径；Linux 使用 build RPATH 查找共享库。
 
-## 六 看运行结果
+### 3.5 看运行结果
 
 本机这组配置的关键输出如下，较长的退出信息做了折行，tick 数会随版本和配置变化：
 
@@ -293,7 +297,7 @@ python3 tests/check_chapter01_host.py \
 
 到这里，验证的是 Guest 执行、两个框架的启动和退出，以及退出时的时间对齐。CPU 与 NPU 还没有交换请求，暂时也看不到带宽、计算吞吐率这些结果。下一篇接上命令 Bridge 后，才开始检查请求有没有丢失、返回时间是否正确。
 
-## 七 后续
+## 4. 后续
 
 这篇先把环境搭到能运行一个小程序。下一篇会加一个简单的 Echo/Add 设备，让 CPU 发出命令，SystemC 侧等若干周期后返回结果。这样就能沿着一条真实请求，看清 CPU 在哪里等待、设备何时完成，以及响应怎么送回来。
 
@@ -301,7 +305,7 @@ python3 tests/check_chapter01_host.py \
 
 文章正文、代码和配图放在同一个仓库里，系列提纲保存在 `SERIES_OUTLINE.md`。后续修改会保留提交记录，已经发布的章节标签也会保留，方便对照文章当时的版本。
 
-## 参考资料
+## 5. 参考资料
 
 1. gem5 官方仓库：[https://github.com/gem5/gem5](https://github.com/gem5/gem5)
 2. gem5 `v25.1.0.1`：[https://github.com/gem5/gem5/releases/tag/v25.1.0.1](https://github.com/gem5/gem5/releases/tag/v25.1.0.1)
