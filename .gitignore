@@ -10,3 +10,4 @@ __pycache__/
 
 # Local Word exports for Zhihu; Markdown is the published source.
 /docs/zhihu/
+/tools/build_chapter01_docx.py
