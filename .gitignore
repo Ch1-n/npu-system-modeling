@@ -7,3 +7,6 @@ stats*.txt
 __pycache__/
 *.pyc
 .DS_Store
+
+# Local Word exports for Zhihu; Markdown is the published source.
+/docs/zhihu/
