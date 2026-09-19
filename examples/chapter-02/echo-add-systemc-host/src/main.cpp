@@ -171,7 +171,7 @@ private:
         while (!device_.take(handle, result))
             wait(device_.response_available);
 
-        const bool guest_ok = event->getCode() == 0
+        const bool guest_ok = event->getCode() == 12
             && event->getCause() == "exiting with last active thread context";
         passed_ = guest_ok && result == 12;
 

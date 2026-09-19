@@ -245,6 +245,18 @@ Echo/Add 只传两个标量，暂时没有内存可见性的问题。如果以�
 
 到这里，我们通过一条自研的 Add 指令展示了协处理器接口中需要考虑的各种点。它不设计 NPU 的复杂计算，但能帮我们先确定三件事：软件交出去的工作有人接，device 完成的结果有人收，等待也不会把整个仿真卡住。接下来把 DMA 加进来，才有基础讨论“计算还没开始，数据究竟卡在哪里”。我们下个章节见，将继续讨论数据流相关问题。
 
+## 九 仿真流程
+
+把前面的模块串起来，运行时可以按下面的顺序理解：
+
+1. 先生成一个包含 `npu_add` 的 RISC-V Guest ELF。这个 Demo 的指令字节是 `0x02B5060B`，用于验证自定义编码没有在进入 gem5 前就被工具链改错。
+2. 用 `gem5.opt` 执行配置脚本，生成 CPU、内存和 Guest 的 `config.ini`。Host 版本不再嵌入 Python，因此把这一步和实际联合仿真分开。
+3. `sc_main` 设置 SystemC 时间分辨率，创建 NPU 时钟、Echo/Add 设备和 `Gem5Host`，再由外部 SystemC kernel 启动整个进程。
+4. gem5 取指并按 `custom-0` 的字段译码。当前最小指令路径先在 gem5 内完成标量加法，用 Guest 的退出码检查 `7 + 5 = 12`；同一 Host 进程还会单独提交一笔 Echo/Add 请求，检查 Bridge 的 FIFO、SystemC 延迟和结果返回。
+5. 设备完成后，Host 取出完成表里的结果，检查 gem5 Guest 的退出原因、指令结果和 SystemC Bridge 返回值，最后统一停止仿真。
+
+因此，这一版 Demo 已经把“Guest 指令能被 gem5 接住”和“SystemC 设备能按模拟时间返回结果”分别跑通。下一步再把自定义指令的执行逻辑直接连接到 Bridge，就能让同一条 Guest 指令真正驱动 SystemC 设备，而不是由 Host 侧并行提交示例请求。
+
 ## 参考资料
 
 1. RISC-V 非特权 ISA 规范及自定义编码空间：[riscv-isa-manual](https://github.com/riscv/riscv-isa-manual)。本文使用独立的教学编码，不是标准 NPU 指令。

@@ -16,7 +16,7 @@
 
 ## 实现状态
 
-最小 Demo 位于 `examples/chapter-02/echo-add-systemc-host`，已经完成 gem5 + 外部 SystemC Host 的请求接受、设备延迟、结果保存和取回。它的提交调用由 Host 侧示例线程发起，用来先验证 Bridge 和时间推进；尚未把 `custom-0` 指令接入 gem5 RISC-V decoder，因此不能把该 Demo 描述成 Guest 自定义指令已经联调完成。
+最小 Demo 位于 `examples/chapter-02/echo-add-systemc-host`，已经完成 `custom-0` 的 `npu_add` 译码、Guest 寄存器加法和退出码验证，也完成 gem5 + 外部 SystemC Host 的请求接受、设备延迟、结果保存和取回。当前两条路径仍是并行验证：`npu_add` 在 gem5 内立即完成标量加法，SystemC Bridge 请求由 Host 侧示例线程提交；自定义指令尚未直接驱动 SystemC Bridge。
 
 正文包含 Guest 汇编与 C 封装示例，以及模型接口伪代码。已按字段计算核对 `0x02B5060B`，但当前检查的 PATH 工具链无 RISC-V 编译目标，尚未完成汇编或 C 示例的交叉编译验证。总在途额度、带代际信息的 handle 等是本文建议的教学接口设计，不能作为现有工程已经实现的保证。
 

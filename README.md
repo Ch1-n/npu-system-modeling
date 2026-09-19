@@ -112,23 +112,28 @@ python3 tests/check_chapter01_host.py \
 
 ### 运行第二章最小 Demo
 
-第一章的 gem5 构建和 `config.ini` 准备完成后，可以运行 Host 侧 Echo/Add Demo：
+第一章的 gem5 构建完成后，先生成包含 `npu_add` 的 Guest 和第二章专用 `config.ini`，再运行 Echo/Add Demo：
 
 ```bash
+./scripts/apply_chapter02_gem5_patch.sh
+./scripts/build_gem5.sh
+./scripts/build_libgem5.sh
+./scripts/prepare_chapter02.sh
+
 cmake -S examples/chapter-02/echo-add-systemc-host \
       -B build/chapter-02/echo-add-systemc-host \
       -DGEM5_ROOT="$PWD/third_party/gem5" \
       -DSYSTEMC_HOME="$SYSTEMC_HOME"
 cmake --build build/chapter-02/echo-add-systemc-host -j4
 ./build/chapter-02/echo-add-systemc-host/echo_add_systemc_host \
-  build/chapter-01/config.ini
+  build/chapter-02/config.ini
 
 python3 tests/check_chapter02_host.py \
   build/chapter-02/echo-add-systemc-host/echo_add_systemc_host \
-  build/chapter-01/config.ini
+  build/chapter-02/config.ini
 ```
 
-这个 Demo 验证的是 Host 侧 Bridge 和 SystemC 时间推进，不包含 Guest 自定义指令的 gem5 decoder 修改；后者会作为下一步实现。
+这个 Demo 同时验证 Guest 的 `custom-0/npu_add` 译码与结果写回，以及 Host 侧 Bridge 和 SystemC 时间推进。当前自定义指令在 gem5 内立即完成标量加法，尚未直接驱动 SystemC Bridge；把两条路径合并是下一步工作。
 
 ## 文章与反馈
 

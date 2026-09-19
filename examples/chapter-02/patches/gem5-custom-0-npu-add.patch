@@ -1,0 +1,23 @@
+diff --git a/src/arch/riscv/isa/decoder.isa b/src/arch/riscv/isa/decoder.isa
+--- a/src/arch/riscv/isa/decoder.isa
++++ b/src/arch/riscv/isa/decoder.isa
+@@ -537,2 +537,19 @@
+     0x3: decode OPCODE5 {
++        // Teaching-only NPU instructions in the custom-0 major opcode.
++        // custom-0 is 0x0b in the raw instruction, while OPCODE5 is bits 6:2.
++        0x02: decode FUNCT3 {
++            format ROp {
++                0x0: decode FUNCT7 {
++                    0x0: decode RS2 {
++                        0x00: npu_echo({{
++                            Rd = Rs1;
++                        }});
++                    }
++                    0x1: npu_add({{
++                        Rd = rvSext(Rs1_sd + Rs2_sd);
++                    }});
++                }
++            }
++        }
++
+         0x00: decode FUNCT3 {
