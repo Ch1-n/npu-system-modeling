@@ -24,6 +24,7 @@ for expected in (
     "bridge accept: handle=1",
     "device issue: handle=1",
     "device complete: handle=1 value=12",
+    "custom-0 return: handle=1 value=12",
     'cause="exiting with last active thread context" code=12',
     "bridge result: 12 (expected 12)",
     "PASS echo_add_systemc_host",

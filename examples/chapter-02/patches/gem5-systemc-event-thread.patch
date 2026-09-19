@@ -1,0 +1,44 @@
+diff --git a/util/systemc/gem5_within_systemc/sc_module.hh b/util/systemc/gem5_within_systemc/sc_module.hh
+--- a/util/systemc/gem5_within_systemc/sc_module.hh
++++ b/util/systemc/gem5_within_systemc/sc_module.hh
+@@ -149,1 +149,3 @@
+     void eventLoop();
++
++    /** Thread wrapper so instruction callbacks may yield to SystemC. */
++    void eventLoopThread();
+diff --git a/util/systemc/gem5_within_systemc/sc_module.cc b/util/systemc/gem5_within_systemc/sc_module.cc
+--- a/util/systemc/gem5_within_systemc/sc_module.cc
++++ b/util/systemc/gem5_within_systemc/sc_module.cc
+@@ -85,3 +85,1 @@
+-    SC_METHOD(eventLoop);
+-    sensitive << eventLoopEnterEvent;
+-    dont_initialize();
++    SC_THREAD(eventLoopThread);
+@@ -90,1 +90,8 @@
+ }
++
++void
++Module::eventLoopThread()
++{
++    while (true) {
++        wait(eventLoopEnterEvent);
++        eventLoop();
++    }
++}
+@@ -239,7 +246,10 @@
+         } else if (gem5_time > next_event_time) {
+-            gem5::Tick systemc_time = sc_core::sc_time_stamp().value();
+-
+-            /* Missed event, for some reason the above test didn't work
+-             *  or an event was scheduled in the past */
+-            fatal("Missed an event at time %d gem5: %d, SystemC: %d",
+-                next_event_time, gem5_time, systemc_time);
++            /* A SystemC callback may have advanced time while gem5 was
++             * yielding. Service the overdue event at current co-sim time. */
++            DPRINTF(Event, "Servicing overdue gem5 event at %d\n",
++                next_event_time);
++            exitEvent = eventq->serviceOne();
++            if (exitEvent) {
++                eventLoopExitEvent.notify(sc_core::SC_ZERO_TIME);
++                return;
++            }

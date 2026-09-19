@@ -1,7 +1,7 @@
 diff --git a/src/arch/riscv/isa/decoder.isa b/src/arch/riscv/isa/decoder.isa
 --- a/src/arch/riscv/isa/decoder.isa
 +++ b/src/arch/riscv/isa/decoder.isa
-@@ -537,2 +537,19 @@
+@@ -537,2 +537,22 @@
      0x3: decode OPCODE5 {
 +        // Teaching-only NPU instructions in the custom-0 major opcode.
 +        // custom-0 is 0x0b in the raw instruction, while OPCODE5 is bits 6:2.
@@ -14,7 +14,10 @@ diff --git a/src/arch/riscv/isa/decoder.isa b/src/arch/riscv/isa/decoder.isa
 +                        }});
 +                    }
 +                    0x1: npu_add({{
-+                        Rd = rvSext(Rs1_sd + Rs2_sd);
++                        // The host-side SystemC adapter blocks until the
++                        // modeled engine returns its result.
++                        extern uint64_t npu_systemc_add(uint64_t, uint64_t);
++                        Rd = rvSext(npu_systemc_add(Rs1, Rs2));
 +                    }});
 +                }
 +            }

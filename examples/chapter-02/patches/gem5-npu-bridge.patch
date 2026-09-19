@@ -1,0 +1,47 @@
+diff --git a/src/arch/riscv/SConscript b/src/arch/riscv/SConscript
+--- a/src/arch/riscv/SConscript
++++ b/src/arch/riscv/SConscript
+@@ -54,1 +54,2 @@
+ Source('decoder.cc', tags=['riscv isa'])
++Source('npu_bridge.cc', tags=['riscv isa'])
+diff --git a/src/arch/riscv/npu_bridge.hh b/src/arch/riscv/npu_bridge.hh
+new file mode 100644
+--- /dev/null
++++ b/src/arch/riscv/npu_bridge.hh
+@@ -0,0 +1,13 @@
++/* Teaching hook for connecting a RISC-V custom instruction to a co-sim host. */
++#ifndef __ARCH_RISCV_NPU_BRIDGE_HH__
++#define __ARCH_RISCV_NPU_BRIDGE_HH__
++
++#include <cstdint>
++
++namespace gem5::RiscvISAInst {
++using NpuAddCallback = std::uint64_t (*)(std::uint64_t, std::uint64_t);
++void setNpuAddCallback(NpuAddCallback callback);
++std::uint64_t npu_systemc_add(std::uint64_t lhs, std::uint64_t rhs);
++} // namespace gem5::RiscvISAInst
++
++#endif
+diff --git a/src/arch/riscv/npu_bridge.cc b/src/arch/riscv/npu_bridge.cc
+new file mode 100644
+--- /dev/null
++++ b/src/arch/riscv/npu_bridge.cc
+@@ -0,0 +1,18 @@
++#include "arch/riscv/npu_bridge.hh"
++
++namespace gem5::RiscvISAInst {
++namespace {
++NpuAddCallback callback = nullptr;
++} // namespace
++
++void setNpuAddCallback(NpuAddCallback new_callback)
++{
++    callback = new_callback;
++}
++
++std::uint64_t npu_systemc_add(std::uint64_t lhs, std::uint64_t rhs)
++{
++    // Standalone gem5 keeps a useful fallback; co-simulation installs a callback.
++    return callback ? callback(lhs, rhs) : lhs + rhs;
++}
++} // namespace gem5::RiscvISAInst

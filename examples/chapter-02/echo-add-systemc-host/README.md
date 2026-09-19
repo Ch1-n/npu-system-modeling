@@ -1,8 +1,8 @@
 # 第二章最小 Echo Add 仿真
 
-这个示例把第一章的 gem5 + SystemC Host 扩展成一条最小命令通路：Host 代表 CPU 侧提交 `7 + 5`，SystemC 设备通过一个深度为 1 的请求 FIFO 接收命令，等待三个 SystemC 纳秒后产生结果，Host 再取回 `12`。
+这个示例把第一章的 gem5 + SystemC Host 扩展成一条最小命令通路：Guest 执行 `custom-0/npu_add`，gem5 指令语义调用 Host 侧适配函数，适配函数把 `7 + 5` 写入 SystemC 设备的深度为 1 的请求 FIFO，等待三个 SystemC 纳秒后取回 `12`，再写回 Guest 的 `a2`。
 
-它已经验证了 `custom-0/npu_add` 的 gem5 译码、Guest 结果写回、请求接受、设备延迟、完成结果和联合仿真退出。当前 `npu_add` 在 gem5 内立即完成标量加法，SystemC Bridge 请求由 Host 侧示例线程并行提交；下一步再把自定义指令直接连接到 Bridge。
+它验证了完整的 `Guest 指令 -> gem5 -> Bridge -> SystemC Engine -> gem5 -> Guest` 路径，包括自定义指令译码、请求接受、设备延迟、完成结果、结果写回和联合仿真退出。为便于教学，这里的 Bridge 是一个进程内回调加 FIFO；它展示接口和时序，不代表真实 NPU 的最终硬件接口。
 
 在仓库根目录执行：
 
@@ -26,6 +26,7 @@ cmake --build build/chapter-02/echo-add-systemc-host -j4
 bridge accept: handle=1
 device issue: handle=1
 device complete: handle=1 value=12
+custom-0 return: handle=1 value=12
 bridge result: 12 (expected 12)
 PASS echo_add_systemc_host
 ```

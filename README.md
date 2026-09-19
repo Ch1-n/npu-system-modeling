@@ -31,7 +31,7 @@ Host 是链接 `libgem5` 的 C++ 程序，由外部 Accellera SystemC 内核运�
 | RISC-V Hello World | Guest 在独立 gem5 和联合仿真 Host 中均正常退出 |
 | Host 退出 | 检查退出原因和退出码，退出时 gem5 与 SystemC 时间戳一致 |
 | 错误路径 | 正确处理一个 tick 的时间上限、非法上限和缺失参数 |
-| Echo/Add Bridge | Host 提交 `7 + 5`，SystemC 设备延迟完成并返回 `12` |
+| Echo/Add Bridge | Guest 的 `custom-0/npu_add` 经 Bridge 送入 SystemC，设备延迟完成并返回 `12` |
 
 **使用仓库脚本从官方干净源码开始的完整构建尚未完成端到端验证，Linux 构建也尚未验证。** Hello World 通过不代表 RVV 执行、双向 Bridge 时序或 NPU 性能已经验证。依赖来源、已知警告和待验证事项见[验证记录](docs/VALIDATION.md)。
 
@@ -102,7 +102,7 @@ python3 tests/check_chapter01_host.py \
 
 目前只发布了基础环境示例，后续计划加入：
 
-1. 将 Host 侧 Echo/Add Bridge 进一步接入 gem5 的 `custom-0` 自定义指令路径，验证 Guest 发射、译码、等待和写回。
+1. 在已有 Echo/Add 路径上继续扩展请求队列、异步提交和多个在途命令。
 2. DMA、片上存储和外存时序，包括 Ramulator2 接入。
 3. 多 Engine、命令调度和同步。
 4. Runtime 软件、算子执行和工作负载调度。
@@ -133,7 +133,7 @@ python3 tests/check_chapter02_host.py \
   build/chapter-02/config.ini
 ```
 
-这个 Demo 同时验证 Guest 的 `custom-0/npu_add` 译码与结果写回，以及 Host 侧 Bridge 和 SystemC 时间推进。当前自定义指令在 gem5 内立即完成标量加法，尚未直接驱动 SystemC Bridge；把两条路径合并是下一步工作。
+这个 Demo 验证完整的 `Guest -> gem5 -> Bridge -> SystemC Engine -> Guest` 路径。`npu_add` 在 standalone gem5 中保留本地加法回退；在联合仿真 Host 中，指令会通过注册的回调提交到 SystemC，并等待 3 ns 的 Engine 延迟后写回结果。
 
 ## 文章与反馈
 

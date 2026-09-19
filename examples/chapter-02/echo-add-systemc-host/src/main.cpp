@@ -11,6 +11,7 @@
 #include "base/socket.hh"
 #include "base/statistics.hh"
 #include "base/trace.hh"
+#include "arch/riscv/npu_bridge.hh"
 #include "sc_logger.hh"
 #include "sc_module.hh"
 #include "sim/cxx_config_ini.hh"
@@ -66,6 +67,8 @@ public:
     }
 
     bool has_response() const { return !completed_.empty(); }
+    std::uint64_t completed_count() const { return completed_count_; }
+    std::uint64_t last_result() const { return last_result_; }
     sc_core::sc_event response_available;
 
 private:
@@ -73,6 +76,8 @@ private:
     std::unordered_map<std::uint64_t, std::uint64_t> completed_;
     std::uint64_t next_handle_ = 1;
     std::uint64_t cycle_ = 0;
+    std::uint64_t completed_count_ = 0;
+    std::uint64_t last_result_ = 0;
 
     void run() {
         while (true) {
@@ -89,6 +94,8 @@ private:
 
             const std::uint64_t result = request.lhs + request.rhs;
             completed_.emplace(request.handle, result);
+            ++completed_count_;
+            last_result_ = result;
             std::cout << "device complete: handle=" << request.handle
                       << " value=" << result
                       << " time=" << sc_core::sc_time_stamp() << '\n';
@@ -96,6 +103,32 @@ private:
         }
     }
 };
+
+namespace {
+
+EchoAddDevice* active_device = nullptr;
+
+} // namespace
+
+std::uint64_t
+npu_systemc_add_callback(std::uint64_t lhs, std::uint64_t rhs)
+{
+    if (active_device == nullptr)
+        SC_REPORT_FATAL("npu_systemc_add", "SystemC device is not connected");
+
+    const std::uint64_t handle = active_device->submit_add(lhs, rhs);
+    if (handle == 0)
+        SC_REPORT_FATAL("npu_systemc_add", "Echo/Add request was rejected");
+
+    std::uint64_t result = 0;
+    while (!active_device->take(handle, result))
+        sc_core::wait(active_device->response_available);
+
+    std::cout << "custom-0 return: handle=" << handle
+              << " value=" << result
+              << " time=" << sc_core::sc_time_stamp() << '\n';
+    return result;
+}
 
 class Gem5Host final : public Gem5SystemC::Module {
 public:
@@ -162,23 +195,18 @@ private:
     bool passed_ = false;
 
     void run() {
-        const std::uint64_t handle = device_.submit_add(7, 5);
-        if (handle == 0)
-            SC_REPORT_FATAL("Gem5Host", "Echo/Add request was rejected");
-
         const gem5::GlobalSimLoopExitEvent* event = simulate(max_ticks_);
-        std::uint64_t result = 0;
-        while (!device_.take(handle, result))
-            wait(device_.response_available);
-
+        catchup();
         const bool guest_ok = event->getCode() == 12
             && event->getCause() == "exiting with last active thread context";
-        passed_ = guest_ok && result == 12;
+        passed_ = guest_ok && device_.completed_count() == 1
+            && device_.last_result() == 12;
 
         std::cout << "gem5 exit: tick=" << gem5::curTick()
                   << " cause=\"" << event->getCause()
                   << "\" code=" << event->getCode() << '\n';
-        std::cout << "bridge result: " << result << " (expected 12)\n";
+        std::cout << "bridge result: " << device_.last_result()
+                  << " (expected 12)\n";
         sc_core::sc_stop();
     }
 };
@@ -208,6 +236,8 @@ int sc_main(int argc, char** argv) {
                                                                 sc_core::SC_PS)};
     EchoAddDevice device{"echo_add"};
     device.clk(npu_clock);
+    active_device = &device;
+    gem5::RiscvISAInst::setNpuAddCallback(&npu_systemc_add_callback);
     Gem5Host gem5{"gem5", argv[1], max_ticks, device};
 
     sc_core::sc_start();

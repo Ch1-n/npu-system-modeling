@@ -60,6 +60,11 @@ target_link_libraries(echo_add_systemc_host PRIVATE
     "${SYSTEMC_LIBRARY}"
     "${GEM5_LIBRARY}"
 )
+if(APPLE)
+    target_link_options(echo_add_systemc_host PRIVATE "-Wl,-export_dynamic")
+elseif(UNIX)
+    target_link_options(echo_add_systemc_host PRIVATE "-Wl,--export-dynamic")
+endif()
 set_target_properties(echo_add_systemc_host PROPERTIES
     BUILD_RPATH "${GEM5_BUILD_DIR};${SYSTEMC_HOME}/lib"
 )

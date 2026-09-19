@@ -252,10 +252,10 @@ Echo/Add 只传两个标量，暂时没有内存可见性的问题。如果以�
 1. 先生成一个包含 `npu_add` 的 RISC-V Guest ELF。这个 Demo 的指令字节是 `0x02B5060B`，用于验证自定义编码没有在进入 gem5 前就被工具链改错。
 2. 用 `gem5.opt` 执行配置脚本，生成 CPU、内存和 Guest 的 `config.ini`。Host 版本不再嵌入 Python，因此把这一步和实际联合仿真分开。
 3. `sc_main` 设置 SystemC 时间分辨率，创建 NPU 时钟、Echo/Add 设备和 `Gem5Host`，再由外部 SystemC kernel 启动整个进程。
-4. gem5 取指并按 `custom-0` 的字段译码。当前最小指令路径先在 gem5 内完成标量加法，用 Guest 的退出码检查 `7 + 5 = 12`；同一 Host 进程还会单独提交一笔 Echo/Add 请求，检查 Bridge 的 FIFO、SystemC 延迟和结果返回。
-5. 设备完成后，Host 取出完成表里的结果，检查 gem5 Guest 的退出原因、指令结果和 SystemC Bridge 返回值，最后统一停止仿真。
+4. gem5 取指并按 `custom-0` 的字段译码。`npu_add` 调用 Host 注册的 Bridge 回调，把两个标量写入 SystemC FIFO；回调挂起 gem5 事件线程，SystemC Engine 等待 3 ns 后返回结果，再恢复指令执行并写回 `rd`。
+5. Guest 将写回的 `a2` 作为退出码，Host 同时检查设备完成记录、gem5 的退出原因和结果，最后统一停止仿真。
 
-因此，这一版 Demo 已经把“Guest 指令能被 gem5 接住”和“SystemC 设备能按模拟时间返回结果”分别跑通。下一步再把自定义指令的执行逻辑直接连接到 Bridge，就能让同一条 Guest 指令真正驱动 SystemC 设备，而不是由 Host 侧并行提交示例请求。
+因此，这一版 Demo 已经把同一条 Guest 指令真正连接到了 SystemC 设备：`Guest 指令 -> gem5 译码与执行 -> Bridge -> SystemC Engine -> Bridge 回调 -> gem5 写回 -> Guest 退出`。这里的 Bridge 仍是进程内教学实现，后续可以在不改变这条时序关系的前提下替换成更接近真实 NPU 的队列、TLM 或寄存器接口。
 
 ## 参考资料
 
