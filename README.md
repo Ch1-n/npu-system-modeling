@@ -4,7 +4,7 @@
 
 这个项目记录我搭建 NPU 系统模拟器的过程，从连接 RISC-V CPU 与 SystemC 模型开始，逐步加入数据搬运、Engine 调度和 Runtime 软件。相关内容会整理成一个[中文技术文章系列](SERIES_OUTLINE.md)。
 
-长期目标是在模拟器中跑通一个小参数量语言模型的推理，观察软件如何映射到硬件，以及时间花在了哪些数据或资源等待上。**当前公开版本只有联合仿真基础环境，还不是能够执行计算的完整 NPU，也不是推理框架。**
+长期目标是在模拟器中跑通一个小参数量语言模型的推理，观察软件如何映射到硬件，以及时间花在了哪些数据或资源等待上。**当前公开版本包含联合仿真基础环境和一个 Host 侧 Echo/Add Bridge Demo，还不是能够执行真实 NPU 算子的完整 NPU，也不是推理框架。**
 
 公开示例采用简化参数和独立的教学 Engine。通用组件会逐步整理发布；核心计算 Engine、产品指令编码、硬件专用性能参数和内部测试资产不在公开范围内。
 
@@ -31,6 +31,7 @@ Host 是链接 `libgem5` 的 C++ 程序，由外部 Accellera SystemC 内核运�
 | RISC-V Hello World | Guest 在独立 gem5 和联合仿真 Host 中均正常退出 |
 | Host 退出 | 检查退出原因和退出码，退出时 gem5 与 SystemC 时间戳一致 |
 | 错误路径 | 正确处理一个 tick 的时间上限、非法上限和缺失参数 |
+| Echo/Add Bridge | Host 提交 `7 + 5`，SystemC 设备延迟完成并返回 `12` |
 
 **使用仓库脚本从官方干净源码开始的完整构建尚未完成端到端验证，Linux 构建也尚未验证。** Hello World 通过不代表 RVV 执行、双向 Bridge 时序或 NPU 性能已经验证。依赖来源、已知警告和待验证事项见[验证记录](docs/VALIDATION.md)。
 
@@ -101,7 +102,7 @@ python3 tests/check_chapter01_host.py \
 
 目前只发布了基础环境示例，后续计划加入：
 
-1. CPU 到 SystemC 的命令 Bridge，使用独立 Echo/Add 示例说明请求与完成语义。
+1. 将 Host 侧 Echo/Add Bridge 进一步接入 gem5 的 `custom-0` 自定义指令路径，验证 Guest 发射、译码、等待和写回。
 2. DMA、片上存储和外存时序，包括 Ramulator2 接入。
 3. 多 Engine、命令调度和同步。
 4. Runtime 软件、算子执行和工作负载调度。
@@ -109,9 +110,31 @@ python3 tests/check_chapter01_host.py \
 
 完整安排见[六篇系列提纲](SERIES_OUTLINE.md)。这些是后续开发目标，不是当前已经提供的功能。
 
+### 运行第二章最小 Demo
+
+第一章的 gem5 构建和 `config.ini` 准备完成后，可以运行 Host 侧 Echo/Add Demo：
+
+```bash
+cmake -S examples/chapter-02/echo-add-systemc-host \
+      -B build/chapter-02/echo-add-systemc-host \
+      -DGEM5_ROOT="$PWD/third_party/gem5" \
+      -DSYSTEMC_HOME="$SYSTEMC_HOME"
+cmake --build build/chapter-02/echo-add-systemc-host -j4
+./build/chapter-02/echo-add-systemc-host/echo_add_systemc_host \
+  build/chapter-01/config.ini
+
+python3 tests/check_chapter02_host.py \
+  build/chapter-02/echo-add-systemc-host/echo_add_systemc_host \
+  build/chapter-01/config.ini
+```
+
+这个 Demo 验证的是 Host 侧 Bridge 和 SystemC 时间推进，不包含 Guest 自定义指令的 gem5 decoder 修改；后者会作为下一步实现。
+
 ## 文章与反馈
 
 - [第一章 从零搭建 gem5 与 SystemC 联合仿真环境](docs/chapter-01-gem5-systemc-foundation.md)（中文）
+- [第二章 一条 NPU 命令如何从 RISC-V CPU 走到 SystemC](docs/chapter-02-cpu-systemc-command-bridge.md)（中文）
+- [第二章最小 Echo/Add 仿真](examples/chapter-02/echo-add-systemc-host/README.md)
 - [验证记录](docs/VALIDATION.md)（中文）
 - [第三方组件](THIRD_PARTY.md)
 

@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net">
+  <diagram name="wait 挂起 hart 让调度器继续推进">
+    <mxGraphModel page="1" pageWidth="1000" pageHeight="700" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="wait 挂起 hart 让调度器继续推进" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=none;spacing=10;strokeColor=none;fontSize=25;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="15" width="960" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="CPU 查询：PENDING" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#EAF2FB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="95" width="340" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="登记 handle → hart&#10;挂起当前 hart" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#EAF2FB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="205" width="340" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="SystemC 继续运行&#10;设备完成并返回响应" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#E7F2EB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="600" y="205" width="340" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="Bridge 先保存完成结果" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#FDF2DC;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="600" y="350" width="340" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="安排 gem5 唤醒事件&#10;时间不早于结果可见时刻" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#FDF2DC;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="600" y="470" width="340" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="事件激活对应 hart&#10;再次查询并消费结果" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#EAF2FB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="470" width="340" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="" source="3" target="4" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="" source="5" target="6" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="" source="6" target="7" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="通知" source="7" target="8" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="检查与登记之间不能丢失完成通知。&#10;唤醒不是结果本身，完成表才保存结果。" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=none;spacing=10;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="140" y="590" width="720" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

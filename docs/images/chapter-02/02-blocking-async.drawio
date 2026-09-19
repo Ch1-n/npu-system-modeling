@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net">
+  <diagram name="阻塞与异步改变的是软件等待方式">
+    <mxGraphModel page="1" pageWidth="1000" pageHeight="560" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="阻塞与异步改变的是软件等待方式" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=none;spacing=10;strokeColor=none;fontSize=25;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="15" width="960" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="直接指令" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=none;spacing=10;strokeColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="105" width="140" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="异步接口" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=none;spacing=10;strokeColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="300" width="140" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="提交 Add" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#EAF2FB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="180" y="100" width="185" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="等待设备&#10;保留内部 handle" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#FDF2DC;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="425" y="100" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="取回 12&#10;指令结束" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#EAF2FB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="100" width="210" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="" source="5" target="6" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="" source="6" target="7" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="submit 返回 h" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#EAF2FB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="180" y="290" width="185" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="CPU 做其他工作&#10;设备同时处理" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#E7F2EB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="425" y="290" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="wait(h)&#10;取回 12" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#EAF2FB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="290" width="210" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="" source="10" target="11" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="" source="11" target="12" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="共同的设备路径：接受 → 排队 → 执行 → 响应可见" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#F4F5F6;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="130" y="440" width="740" height="55" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

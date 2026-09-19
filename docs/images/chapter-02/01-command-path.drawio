@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net">
+  <diagram name="从一条指令到一次设备请求">
+    <mxGraphModel page="1" pageWidth="1000" pageHeight="560" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="从一条指令到一次设备请求" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=none;spacing=10;strokeColor=none;fontSize=25;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="15" width="960" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Guest&#10;npu_add rd, rs1, rs2" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#EAF2FB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="30" y="100" width="250" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="gem5 CPU&#10;识别指令 · 读取 7 和 5" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#EAF2FB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="350" y="100" width="280" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="Bridge&#10;接受请求 · 分配 handle" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#E7F2EB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="710" y="100" width="260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="CPU 继续执行&#10;取回结果 · 写入 rd" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#EAF2FB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="30" y="330" width="250" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="完成表&#10;保存 handle / 状态 / 12" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#FDF2DC;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="350" y="330" width="280" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="SystemC Add&#10;按设定周期计算" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#E7F2EB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="710" y="330" width="260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="" source="3" target="4" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="" source="4" target="5" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="排队与传递延迟" source="5" target="8" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="返回延迟" source="8" target="7" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="取回响应" source="7" target="6" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="Host 函数调用负责入队；模拟时钟决定设备何时执行。" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=none;spacing=10;strokeColor=none;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="60" y="475" width="880" height="50" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

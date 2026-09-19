@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net">
+  <diagram name="接受以后 请求编号要一直保留">
+    <mxGraphModel page="1" pageWidth="1000" pageHeight="570" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="接受以后 请求编号要一直保留" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=none;spacing=10;strokeColor=none;fontSize=25;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="15" width="960" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="CPU 尝试提交" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#EAF2FB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="50" y="95" width="240" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Bridge 接受&#10;占用在途额度" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#E7F2EB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="380" y="95" width="250" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="设备执行" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#E7F2EB;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="710" y="95" width="240" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="有资源" source="3" target="4" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="" source="4" target="5" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="RETRY&#10;未接受 · 不执行" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#FBEAEA;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="50" y="265" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="无资源" source="3" target="8" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="软件消费结果&#10;释放 handle 与额度" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#FDF2DC;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="380" y="265" width="250" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="完成表&#10;等待软件取走" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=#FDF2DC;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="710" y="265" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="" source="5" target="11" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="" source="11" target="10" parent="1" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;strokeColor=#465B6E;strokeWidth=2;fontFamily=Arial;fontSize=17;labelBackgroundColor=#ffffff;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="已接受的请求只查已有 handle，不重复提交。&#10;完成结果未取走，仍然占用资源。" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Arial;fontSize=20;fontColor=#202830;strokeColor=#7891A8;fillColor=none;spacing=10;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="190" y="430" width="620" height="90" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
